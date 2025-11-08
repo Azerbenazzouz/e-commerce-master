@@ -142,7 +142,7 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
-                    <Link href="/auth/profile" className="flex items-center gap-3 px-3 py-2.5">
+                    <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5">
                       <span className="font-medium">Profil</span>
                     </Link>
                   </DropdownMenuItem>
