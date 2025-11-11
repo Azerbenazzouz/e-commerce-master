@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { CartDrawer } from '@/components/ecommerce/cart-drawer';
 import { signOut, authClient } from '@/lib/auth-client';
 import { User } from "better-auth"
+import { Role } from "@prisma/client"
 
 
 const categories = [
@@ -55,6 +56,9 @@ export function Header() {
     setUser(session.user)
     setLoadingAuth(false)
   }, [session])
+
+  // Get user role
+  const isAdmin = session?.user?.role as Role === Role.ADMIN
 
   const handleSignOut = async () => {
     try {
@@ -146,6 +150,18 @@ export function Header() {
                       <span className="font-medium">Profil</span>
                     </Link>
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <div className="my-1 border-t border-border"></div>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex items-center gap-3 px-3 py-2.5 text-red-600 font-semibold hover:text-red-700">
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  <div className="my-1 border-t border-border"></div>
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="flex items-center gap-3 px-3 py-2.5">
                       <span className="font-medium">Mes commandes</span>
@@ -216,23 +232,44 @@ export function Header() {
 
                 {/* Compte utilisateur */}
                 <div className="p-2">
-                  <DropdownMenuItem asChild>
-                    <Link href="/auth/login" className="flex items-center gap-3 px-3 py-2.5">
-                      <UserIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Mon compte</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/orders" className="flex items-center gap-3 px-3 py-2.5">
-                      <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Mes commandes</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <button onClick={(e) => { e.preventDefault(); handleSignOut(); }} className="w-full text-left px-3 py-2.5">
-                      Se déconnecter
-                    </button>
-                  </DropdownMenuItem>
+                  {user ? (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5">
+                          <UserIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Mon profil</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      {/* Admin Panel Mobile */}
+                      {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin" className="flex items-center gap-3 px-3 py-2.5 text-red-600 font-semibold">
+                            <span>🔧 Admin Panel</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      <DropdownMenuItem asChild>
+                        <Link href="/orders" className="flex items-center gap-3 px-3 py-2.5">
+                          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Mes commandes</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <button onClick={(e) => { e.preventDefault(); handleSignOut(); }} className="w-full text-left px-3 py-2.5">
+                          Se déconnecter
+                        </button>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <DropdownMenuItem asChild>
+                      <Link href="/auth/login" className="flex items-center gap-3 px-3 py-2.5">
+                        <UserIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">Se connecter</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>

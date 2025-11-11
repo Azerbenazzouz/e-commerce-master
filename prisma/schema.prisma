@@ -83,7 +83,7 @@ model Product {
   price       Float
   originalPrice Float?
   rating      Float    @default(0)
-  imageUrl    String
+  // imageUrl    String
   popularity  Int      @default(0)
   isNew       Boolean  @default(true)
   description String
