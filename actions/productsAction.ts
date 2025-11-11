@@ -164,3 +164,57 @@ export const deleteProduct = async (productId: string) => {
         return { success: false, error: "Erreur lors de la suppression du produit." }
     }
 }
+
+export const updateProduct = async (productId: string, data: Partial<ProductSchemaType>) => {
+    try {
+        // Validate the input data
+        const validatedData = ProductSchema.partial().parse(data)
+
+        // Check if category exists when updating category
+        if (validatedData.categoryId) {
+            const category = await prisma.category.findUnique({
+                where: { id: validatedData.categoryId }
+            })
+
+            if (!category) {
+                return { success: false, error: "La catégorie spécifiée n'existe pas." }
+            }
+        }
+
+        // Update the product
+        const product = await prisma.product.update({
+            where: { id: productId },
+            data: {
+                ...(validatedData.name && { name: validatedData.name }),
+                ...(validatedData.price !== undefined && { price: validatedData.price }),
+                ...(validatedData.originalPrice !== undefined && { originalPrice: validatedData.originalPrice }),
+                ...(validatedData.description && { description: validatedData.description }),
+                ...(validatedData.categoryId && { categoryId: validatedData.categoryId }),
+                ...(validatedData.stock !== undefined && { stock: validatedData.stock }),
+                ...(validatedData.rating !== undefined && { rating: validatedData.rating }),
+                ...(validatedData.popularity !== undefined && { popularity: validatedData.popularity }),
+                ...(validatedData.isNew !== undefined && { isNew: validatedData.isNew }),
+                ...(validatedData.specifications && { specifications: validatedData.specifications as Prisma.InputJsonValue }),
+            },
+            include: {
+                category: true,
+            }
+        })
+
+        return { 
+            success: true, 
+            result: product,
+            message: "Produit mis à jour avec succès."
+        }
+    } catch (error) {
+        if (error instanceof ZodError) {
+            return { 
+                success: false, 
+                error: "Erreur de validation des données.",
+                details: error.issues
+            }
+        }
+        console.error("Error updating product:", error)
+        return { success: false, error: "Erreur lors de la mise à jour du produit." }
+    }
+}

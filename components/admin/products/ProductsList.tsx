@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 
 
 interface ProductsListProps {
-  categories?: Category[]
+  categories: Category[]
 }
 
 const DEFAULT_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="32" fill="%239ca3af"%3ENo Image%3C/text%3E%3C/svg%3E'
@@ -122,7 +122,7 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
 
   // Handle filter changes
   const handleCategoryChange = useCallback((value: string) => {
-    setCategoryFilter(value)
+    setCategoryFilter(value === 'all' ? '' : value)
     setCurrentPage(1)
   }, [])
 
@@ -209,7 +209,7 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
                 <SelectValue placeholder="Toutes les catégories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes les catégories</SelectItem>
+                <SelectItem value="all">Toutes les catégories</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
@@ -306,7 +306,7 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
 
                       {/* Price */}
                       <TableCell className="text-right font-semibold text-slate-900 dark:text-slate-100">
-                        {product.price.toFixed(2)} €
+                        {product.price.toFixed(2)} TND
                       </TableCell>
 
                       {/* Stock */}

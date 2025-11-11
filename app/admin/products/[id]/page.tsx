@@ -119,11 +119,11 @@ const ProductDetailsPage = () => {
                   Prix
                 </div>
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {product.price.toFixed(2)} €
+                  {product.price.toFixed(2)} TND
                 </div>
                 {product.originalPrice && (
                   <div className="text-sm text-slate-500 line-through">
-                    {product.originalPrice.toFixed(2)} €
+                    {product.originalPrice.toFixed(2)} TND
                   </div>
                 )}
               </div>

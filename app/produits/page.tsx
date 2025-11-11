@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal } from "lucide-react"
@@ -19,36 +20,66 @@ const generateArray = (length: number) => Array.from({ length }, (_, i) => i)
 
 export default function ProductsPage() {
   const { addItem } = useCart()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   
-  // États
-  const [selectedCategory, setSelectedCategory] = useState("Tous")
-  const [priceRange, setPriceRange] = useState<number[]>([...DEFAULT_PRICE_RANGE])
-  const [minRating, setMinRating] = useState(0)
+  // Récupérer les valeurs directement des query parameters
+  const selectedCategory = searchParams.get("category") || "Tous"
+  const queryMinPrice = searchParams.get("minPrice") ? parseInt(searchParams.get("minPrice")!) : DEFAULT_PRICE_RANGE[0]
+  const queryMaxPrice = searchParams.get("maxPrice") ? parseInt(searchParams.get("maxPrice")!) : DEFAULT_PRICE_RANGE[1]
+  const minRating = searchParams.get("rating") ? parseInt(searchParams.get("rating")!) : 0
+  const querySearch = searchParams.get("search") || ""
+  
+  const priceRange = useMemo(() => [queryMinPrice, queryMaxPrice], [queryMinPrice, queryMaxPrice])
+  
+  // États locaux (non directement liés aux filtres)
   const [sortBy, setSortBy] = useState("popularity")
   const [currentPage, setCurrentPage] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const handleCategoryChange = useCallback((category: string) => {
-    setSelectedCategory(category)
     setCurrentPage(1)
-  }, [])
+    // Mettre à jour l'URL
+    const params = new URLSearchParams(searchParams.toString())
+    if (category === "Tous") {
+      params.delete("category")
+    } else {
+      params.set("category", category)
+    }
+    router.push(`/produits?${params.toString()}`)
+  }, [searchParams, router])
 
   const handlePriceChange = useCallback((range: number[]) => {
-    setPriceRange(range)
     setCurrentPage(1)
-  }, [])
+    // Mettre à jour l'URL
+    const params = new URLSearchParams(searchParams.toString())
+    if (range[0] === DEFAULT_PRICE_RANGE[0] && range[1] === DEFAULT_PRICE_RANGE[1]) {
+      params.delete("minPrice")
+      params.delete("maxPrice")
+    } else {
+      params.set("minPrice", range[0].toString())
+      params.set("maxPrice", range[1].toString())
+    }
+    router.push(`/produits?${params.toString()}`)
+  }, [searchParams, router])
 
   const handleRatingChange = useCallback((rating: number) => {
-    setMinRating(rating)
     setCurrentPage(1)
-  }, [])
+    // Mettre à jour l'URL
+    const params = new URLSearchParams(searchParams.toString())
+    if (rating === 0) {
+      params.delete("rating")
+    } else {
+      params.set("rating", rating.toString())
+    }
+    router.push(`/produits?${params.toString()}`)
+  }, [searchParams, router])
 
   const handleResetFilters = useCallback(() => {
-    setSelectedCategory("Tous")
-    setPriceRange([...DEFAULT_PRICE_RANGE])
-    setMinRating(0)
     setCurrentPage(1)
-  }, [])
+    // Effacer tous les query parameters
+    router.push("/produits")
+  }, [router])
 
   const handleAddToCart = useCallback((product: Product) => {
     addItem({
@@ -65,7 +96,10 @@ export default function ProductsPage() {
       const categoryMatch = selectedCategory === "Tous" || product.category === selectedCategory
       const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1]
       const ratingMatch = product.rating >= minRating
-      return categoryMatch && priceMatch && ratingMatch
+      const searchMatch = querySearch === "" || 
+        product.name.toLowerCase().includes(querySearch.toLowerCase()) ||
+        product.description?.toLowerCase().includes(querySearch.toLowerCase())
+      return categoryMatch && priceMatch && ratingMatch && searchMatch
     })
 
     // Tri des produits
@@ -85,7 +119,7 @@ export default function ProductsPage() {
     })
 
     return filtered
-  }, [selectedCategory, priceRange, minRating, sortBy])
+  }, [selectedCategory, priceRange, minRating, sortBy, querySearch])
 
   // Pagination ✅ will be from the backend
   const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE)

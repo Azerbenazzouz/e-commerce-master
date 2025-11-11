@@ -8,7 +8,8 @@ import { getAllCategories } from '@/actions/categoriesAction'
 
 async function getCategories() {
   try {
-    const categories = await getAllCategories().then(res => {
+    const categories = await getAllCategories()
+    .then(res => {
       if (res.success && res.result) {
         return res.result
       }
@@ -46,7 +47,7 @@ export default async function ProductListPage() {
 
       {/* Products List */}
       <Suspense fallback={<ProductsLoadingSkeleton rows={10} />}>
-        <ProductsList categories={categories} />
+        <ProductsList categories={categories ?? []} />
       </Suspense>
     </div>
   )
