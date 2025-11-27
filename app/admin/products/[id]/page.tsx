@@ -12,21 +12,21 @@ import { getProductById } from '@/actions/productsAction'
 import { FullProduct } from '@/model/ProductModel'
 
 const ProductDetailsPage = () => {
-    const [product, setProduct] = useState<FullProduct>()
-    const params = useParams()
-    const id = params.id as string
+  const [product, setProduct] = useState<FullProduct>()
+  const params = useParams()
+  const id = params.id as string
 
-    useEffect(() => {
-        const fetchProduct = async () => {
-            await getProductById(id)
-                .then((res) => {
-                    if (res.success && res.result) {
-                        setProduct(res.result as FullProduct)
-                    }
-                })
-        }
-        fetchProduct()
-    }, [id])
+  useEffect(() => {
+    const fetchProduct = async () => {
+      await getProductById(id)
+        .then((res) => {
+          if (res.success && res.result) {
+            setProduct(res.result as FullProduct)
+          }
+        })
+    }
+    fetchProduct()
+  }, [id])
 
   if (!product) {
     notFound()

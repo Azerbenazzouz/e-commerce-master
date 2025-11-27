@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import { Suspense } from 'react'
 import ProductsList from '@/components/admin/products/ProductsList'
 import { ProductsLoadingSkeleton } from '@/components/admin/products/ProductsLoadingSkeleton'
 import { Button } from '@/components/ui/button'
@@ -9,12 +9,12 @@ import { getAllCategories } from '@/actions/categoriesAction'
 async function getCategories() {
   try {
     const categories = await getAllCategories()
-    .then(res => {
-      if (res.success && res.result) {
-        return res.result
-      }
-      return []
-    })
+      .then(res => {
+        if (res.success && res.result) {
+          return res.result
+        }
+        return []
+      })
     return categories
   } catch (error) {
     console.error('Error fetching categories:', error)

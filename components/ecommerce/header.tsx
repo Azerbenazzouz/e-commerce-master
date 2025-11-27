@@ -87,8 +87,8 @@ export function Header() {
 
             {/* Desktop: Primary Navigation */}
             <nav className="hidden lg:flex lg:items-center lg:gap-1">
-              <Link 
-                href="/produits" 
+              <Link
+                href="/produits"
                 className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-md hover:bg-muted"
               >
                 Produits
@@ -160,7 +160,7 @@ export function Header() {
                       </DropdownMenuItem>
                     </>
                   )}
-                  
+
                   <div className="my-1 border-t border-border"></div>
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="flex items-center gap-3 px-3 py-2.5">
@@ -195,7 +195,7 @@ export function Header() {
                 <div className="border-b border-border bg-muted/50 px-4 py-3">
                   <p className="text-sm font-semibold">Navigation</p>
                 </div>
-                
+
                 {/* Navigation principale */}
                 <div className="p-2">
                   <DropdownMenuItem asChild>
@@ -216,7 +216,7 @@ export function Header() {
                   <div className="grid grid-cols-2 gap-1">
                     {categories.map((category) => (
                       <DropdownMenuItem key={category} asChild>
-                        <Link 
+                        <Link
                           href={`/produits?category=${encodeURIComponent(category)}`}
                           className="px-3 py-2 text-sm"
                         >
@@ -240,7 +240,7 @@ export function Header() {
                           <span className="font-medium">Mon profil</span>
                         </Link>
                       </DropdownMenuItem>
-                      
+
                       {/* Admin Panel Mobile */}
                       {isAdmin && (
                         <DropdownMenuItem asChild>
@@ -249,7 +249,7 @@ export function Header() {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      
+
                       <DropdownMenuItem asChild>
                         <Link href="/orders" className="flex items-center gap-3 px-3 py-2.5">
                           <ShoppingBag className="h-4 w-4 text-muted-foreground" />

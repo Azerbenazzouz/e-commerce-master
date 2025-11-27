@@ -44,7 +44,7 @@ export default function AdminPage() {
               <p className="text-sm text-muted-foreground mt-2">
                 Vous n&#39;avez pas les droits d&#39;administrateur pour accéder à cette page.
               </p>
-              <Link href="/profile" className="block mt-6">
+              <Link href={{ pathname: "/profile" }} className="block mt-6">
                 <Button className="w-full">Retour au profil</Button>
               </Link>
             </div>
@@ -161,7 +161,7 @@ export default function AdminPage() {
                   Ajouter, modifier, ou supprimer des produits du catalogue
                 </p>
                 <Button variant="outline" className="w-full" onClick={() => router.push("/admin/products")}>
-                    Gérer les produits
+                  Gérer les produits
                 </Button>
               </CardContent>
             </Card>

@@ -107,7 +107,7 @@ export function CartDrawer() {
                 </div>
               </div>
               <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" size="lg">
-                <Link href="/panier">Voir le panier</Link>
+                <Link href={{ pathname: "/panier" }}>Voir le panier</Link>
               </Button>
             </div>
           </>
