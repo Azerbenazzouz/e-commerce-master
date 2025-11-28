@@ -4,18 +4,18 @@ import { prisma } from "./db";
 import { hashPassword, verifyPassword } from "./argon2";
 import { nextCookies } from "better-auth/next-js";
 import { Role } from "@prisma/client";
-// import { createAuthMiddleware, APIError } from "better-auth/api";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  // experimental: { joins: true },
   emailAndPassword: {
-    enabled: true, 
+    enabled: true,
     minPasswordLength: 6,
     password: {
-        hash: hashPassword,
-        verify: verifyPassword
+      hash: hashPassword,
+      verify: verifyPassword
     },
     autoSignIn: true
   },
@@ -47,7 +47,7 @@ export const auth = betterAuth({
     // before: createAuthMiddleware(async (ctx) => {
     //   if (ctx.path === "/sign-in/email") {
     //       const { email } = ctx.body || {};
-          
+
     //       if (email) {
     //           const user = await prisma.user.findUnique({
     //               where: { email },
@@ -56,7 +56,7 @@ export const auth = betterAuth({
     //                 id: true 
     //               }
     //           });
-              
+
     //           if (user && !user.active) {
     //               throw new APIError("FORBIDDEN", {
     //                   message: "Ce compte est désactivé. Veuillez contacter l'administrateur."
