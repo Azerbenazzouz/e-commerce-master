@@ -19,7 +19,7 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
         const orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' }
         let skip = 0
         const take = filter?.pageSize || 20
-        
+
         if (filter?.categoryId) {
             where.categoryId = filter.categoryId
         }
@@ -62,8 +62,8 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
             prisma.product.count({ where })
         ])
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             result: products,
             totalCount,
             pageCount: Math.ceil(totalCount / take)
@@ -76,10 +76,19 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
 
 export const getProductById = async (productId: string) => {
     try {
-        const product = await prisma.product.findUnique({
-            where: { id: productId }
+        const product = await prisma.product.findFirst({
+            where: { id: productId },
+            include: {
+                category: true,
+                images: true,
+                reviews: {
+                    include: {
+                        user: true
+                    }
+                }
+            }
         })
-        
+
         if (!product) {
             return { success: false, error: "Produit non trouvé." }
         }
@@ -123,15 +132,15 @@ export const createProduct = async (data: ProductSchemaType) => {
             }
         })
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             result: product,
             message: "Produit créé avec succès."
         }
     } catch (error) {
         if (error instanceof ZodError) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 error: "Erreur de validation des données.",
                 details: error.issues
             }
@@ -155,7 +164,7 @@ export const deleteProduct = async (productId: string) => {
             where: { id: productId }
         })
 
-        return { 
+        return {
             success: true,
             message: "Produit supprimé avec succès."
         }
@@ -201,15 +210,15 @@ export const updateProduct = async (productId: string, data: Partial<ProductSche
             }
         })
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             result: product,
             message: "Produit mis à jour avec succès."
         }
     } catch (error) {
         if (error instanceof ZodError) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 error: "Erreur de validation des données.",
                 details: error.issues
             }
@@ -218,3 +227,4 @@ export const updateProduct = async (productId: string, data: Partial<ProductSche
         return { success: false, error: "Erreur lors de la mise à jour du produit." }
     }
 }
+

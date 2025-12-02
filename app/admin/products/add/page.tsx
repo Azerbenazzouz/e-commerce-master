@@ -1,6 +1,5 @@
 "use client"
 
-import React from 'react'
 import { useRouter } from 'next/navigation'
 import ProductForm from '@/components/admin/products/ProductForm'
 import { ArrowLeft } from 'lucide-react'

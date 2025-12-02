@@ -50,8 +50,8 @@ export const createCategory = async (data: CategorySchemaType) => {
         }
     } catch (error) {
         if (error instanceof ZodError) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 error: "Validation error.",
             };
         }
@@ -78,6 +78,40 @@ export const deleteCategory = async (categoryId: string) => {
     } catch (error) {
         console.error("Error deleting category:", error);
         return { success: false, error: "Failed to delete category." };
+    }
+}
+
+export const updateCategory = async (categoryId: string, data: CategorySchemaType) => {
+    try {
+        CategorySchema.parse(data);
+
+        const category = await prisma.category.findFirst({
+            where: { id: categoryId }
+        });
+
+        if (!category) {
+            return { success: false, error: "Category not found." };
+        }
+
+        const updatedCategory = await prisma.category.update({
+            where: { id: categoryId },
+            data: { name: data.name }
+        });
+
+        return {
+            success: true,
+            result: updatedCategory,
+            message: "Category updated successfully."
+        }
+    } catch (error) {
+        if (error instanceof ZodError) {
+            return {
+                success: false,
+                error: "Validation error.",
+            };
+        }
+        console.error("Error updating category:", error);
+        return { success: false, error: "Failed to update category." };
     }
 }
 
