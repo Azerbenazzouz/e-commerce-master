@@ -1,26 +1,64 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { useState } from "react"
-import { Star, Minus, Plus, ShoppingCart, Check, Truck, Shield, RotateCcw } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Star, Minus, Plus, ShoppingCart, Check, Truck, Shield, RotateCcw, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { getProductById, getSimilarProducts, getProductReviews } from "@/lib/products-data"
+import { getProductById, getSimilarProducts } from "@/actions/productsAction"
+import { ProductWithRelations } from "@/model/ProductModel"
 import Link from "next/link"
 import { useCart } from "@/context/cart-context"
 import Image from "next/image"
 
 export default function ProductDetailPage() {
   const params = useParams()
-  const productId = Number(params.id)
-  const product = getProductById(productId)
+  const productId = params.id as string // ID is string in DB
   const { addItem } = useCart()
 
+  const [product, setProduct] = useState<ProductWithRelations | null>(null)
+  const [similarProducts, setSimilarProducts] = useState<ProductWithRelations[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const productRes = await getProductById(productId)
+        if (productRes.success && productRes.result) {
+          const prod = productRes.result as ProductWithRelations
+          setProduct(prod)
+
+          if (prod.categoryId) {
+            const similarRes = await getSimilarProducts(prod.id, prod.categoryId)
+            if (similarRes.success && similarRes.result) {
+              setSimilarProducts(similarRes.result as ProductWithRelations[])
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch product data", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (productId) {
+      fetchData()
+    }
+  }, [productId])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -35,9 +73,11 @@ export default function ProductDetailPage() {
     )
   }
 
-  const images = product.images || [product.image, product.image, product.image]
-  const similarProducts = getSimilarProducts(productId, product.category)
-  const reviews = getProductReviews(productId)
+  const images = product.images.map(img => img.url)
+  // Fallback if no images
+  if (images.length === 0) images.push("/placeholder.svg")
+
+  const reviews = product.reviews
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
@@ -45,7 +85,7 @@ export default function ProductDetailPage() {
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image,
+        image: images[0],
       })
     }
     setAddedToCart(true)
@@ -74,8 +114,8 @@ export default function ProductDetailPage() {
               Produits
             </Link>
             <span>/</span>
-            <Link href={`/produits?category=${product.category}`} className="hover:text-foreground">
-              {product.category}
+            <Link href={`/produits?category=${product.category?.name || 'Tous'}`} className="hover:text-foreground">
+              {product.category?.name || 'Catégorie'}
             </Link>
             <span>/</span>
             <span className="text-foreground">{product.name}</span>
@@ -102,9 +142,8 @@ export default function ProductDetailPage() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === index ? "border-primary" : "border-transparent hover:border-muted-foreground/30"
-                  }`}
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === index ? "border-primary" : "border-transparent hover:border-muted-foreground/30"
+                    }`}
                 >
                   <Image
                     src={image || "/placeholder.svg"}
@@ -121,9 +160,9 @@ export default function ProductDetailPage() {
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              {product.badge && (
-                <Badge className="mb-3" variant={product.badge === "Promo" ? "destructive" : "default"}>
-                  {product.badge}
+              {product.isNew && (
+                <Badge className="mb-3 bg-blue-500 hover:bg-blue-600">
+                  Nouveau
                 </Badge>
               )}
               <h1 className="text-3xl lg:text-4xl font-bold mb-2 text-balance">{product.name}</h1>
@@ -136,7 +175,7 @@ export default function ProductDetailPage() {
                     />
                   ))}
                   <span className="ml-2 text-sm text-muted-foreground">
-                    {product.rating} ({product.reviews} avis)
+                    {product.rating} ({reviews.length} avis)
                   </span>
                 </div>
               </div>
@@ -239,11 +278,11 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Specifications */}
-        {product.specifications && product.specifications.length > 0 && (
+        {product.specifications && (product.specifications as any[]).length > 0 && (
           <Card className="p-6 mb-16">
             <h2 className="text-2xl font-bold mb-6">Caractéristiques techniques</h2>
             <div className="grid sm:grid-cols-2 gap-4">
-              {product.specifications.map((spec, index) => (
+              {(product.specifications as any[]).map((spec, index) => (
                 <div key={index} className="flex justify-between py-3 border-b last:border-0">
                   <span className="font-medium">{spec.label}</span>
                   <span className="text-muted-foreground">{spec.value}</span>
@@ -262,12 +301,12 @@ export default function ProductDetailPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">{review.author}</span>
-                      {review.verified && (
+                      <span className="font-semibold">{review.user?.name || "Anonyme"}</span>
+                      {/* {review.verified && (
                         <Badge variant="secondary" className="text-xs">
                           Achat vérifié
                         </Badge>
-                      )}
+                      )} */}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex">
@@ -279,7 +318,7 @@ export default function ProductDetailPage() {
                         ))}
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(review.date).toLocaleDateString("fr-FR")}
+                        {new Date(review.createdAt).toLocaleDateString("fr-FR")}
                       </span>
                     </div>
                   </div>
@@ -300,7 +339,7 @@ export default function ProductDetailPage() {
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <div className="aspect-square overflow-hidden bg-muted">
                       <Image
-                        src={similarProduct.image || "/placeholder.svg"}
+                        src={similarProduct.images[0]?.url || "/placeholder.svg"}
                         alt={similarProduct.name}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         width={400}
@@ -313,12 +352,11 @@ export default function ProductDetailPage() {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-3 h-3 ${
-                              i < Math.floor(similarProduct.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted"
-                            }`}
+                            className={`w-3 h-3 ${i < Math.floor(similarProduct.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted"
+                              }`}
                           />
                         ))}
-                        <span className="text-xs text-muted-foreground ml-1">({similarProduct.reviews})</span>
+                        <span className="text-xs text-muted-foreground ml-1">({similarProduct.reviews.length})</span>
                       </div>
                       <div className="flex items-baseline gap-2">
                         <span className="text-lg font-bold">{similarProduct.price.toFixed(2)} TND</span>

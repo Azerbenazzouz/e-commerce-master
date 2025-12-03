@@ -1,37 +1,41 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart } from "lucide-react"
+import { Star, ShoppingCart, Zap } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
-import { type Product } from "@/lib/products-data"
+import { ProductWithRelations } from "@/model/ProductModel"
 
 interface ProductCardProps {
-  product: Product
-  onAddToCart: (product: Product) => void
+  product: ProductWithRelations
+  onAddToCart: (product: ProductWithRelations) => void
 }
 
 const generateArray = (length: number) => Array.from({ length }, (_, i) => i)
 
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
+  const imageUrl = product.images[0]?.url || "/placeholder.svg"
+  const reviewCount = product.reviews.length
+
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
       <CardContent className="p-0">
         <Link href={`/produits/${product.id}`} className="block">
           <div className="relative aspect-square overflow-hidden bg-muted">
             <Image
-              src={product.image || "/placeholder.svg"}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-110"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               loading="lazy"
             />
-            {product.badge && (
-              <Badge className="absolute left-3 top-3 bg-accent text-accent-foreground text-xs sm:text-sm">
-                {product.badge}
+            {product.isNew && (
+              <Badge className="absolute left-3 top-3 bg-blue-500/90 text-white text-xs sm:text-sm backdrop-blur-sm shadow-lg">
+                <Zap className="mr-1 h-3 w-3" />
+                Nouveau
               </Badge>
             )}
           </div>
@@ -45,16 +49,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                 {generateArray(5).map((i) => (
                   <Star
                     key={i}
-                    className={`h-3 w-3 sm:h-4 sm:w-4 ${
-                      i < Math.floor(product.rating)
+                    className={`h-3 w-3 sm:h-4 sm:w-4 ${i < Math.floor(product.rating)
                         ? "fill-accent text-accent"
                         : "fill-muted text-muted"
-                    }`}
+                      }`}
                     aria-hidden="true"
                   />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground sm:text-sm">({product.reviews})</span>
+              <span className="text-xs text-muted-foreground sm:text-sm">({reviewCount})</span>
             </div>
             {/* Prix */}
             <div className="flex items-baseline gap-2">

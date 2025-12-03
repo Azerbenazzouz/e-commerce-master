@@ -8,9 +8,12 @@ import { ZodError } from "zod"
 interface GetAllProductsFilter {
     categoryId?: string
     searchTerm?: string
-    sortBy?: 'priceAsc' | 'priceDesc' | 'newest'
+    sortBy?: 'priceAsc' | 'priceDesc' | 'newest' | 'popularity'
     pageSize?: number
     pageNumber?: number
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
 }
 
 export const getAllProducts = async (filter?: GetAllProductsFilter) => {
@@ -20,7 +23,7 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
         let skip = 0
         const take = filter?.pageSize || 20
 
-        if (filter?.categoryId) {
+        if (filter?.categoryId && filter.categoryId !== "Tous") {
             where.categoryId = filter.categoryId
         }
         if (filter?.searchTerm) {
@@ -29,6 +32,18 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
                 { description: { contains: filter.searchTerm, mode: 'insensitive' } },
             ]
         }
+        if (filter?.minPrice !== undefined || filter?.maxPrice !== undefined) {
+            where.price = {
+                gte: filter?.minPrice,
+                lte: filter?.maxPrice
+            }
+        }
+        if (filter?.minRating) {
+            where.rating = {
+                gte: filter.minRating
+            }
+        }
+
         if (filter?.sortBy) {
             if (filter.sortBy === 'priceAsc') {
                 orderBy.price = 'asc'
@@ -36,6 +51,8 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
                 orderBy.price = 'desc'
             } else if (filter.sortBy === 'newest') {
                 orderBy.createdAt = 'desc'
+            } else if (filter.sortBy === 'popularity') {
+                orderBy.popularity = 'desc'
             }
         }
 
@@ -225,6 +242,31 @@ export const updateProduct = async (productId: string, data: Partial<ProductSche
         }
         console.error("Error updating product:", error)
         return { success: false, error: "Erreur lors de la mise à jour du produit." }
+    }
+}
+
+export const getSimilarProducts = async (productId: string, categoryId: string) => {
+    try {
+        const products = await prisma.product.findMany({
+            where: {
+                categoryId: categoryId,
+                id: { not: productId }
+            },
+            take: 4,
+            include: {
+                category: true,
+                images: true,
+                reviews: {
+                    include: {
+                        user: true
+                    }
+                }
+            }
+        })
+        return { success: true, result: products }
+    } catch (error) {
+        console.error("Error fetching similar products:", error)
+        return { success: false, error: "Erreur lors de la récupération des produits similaires." }
     }
 }
 

@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SlidersHorizontal } from "lucide-react"
-import { allProducts, type Product } from "@/lib/products-data"
+import { SlidersHorizontal, Loader2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useCart } from "@/context/cart-context"
 import { FilterContent } from "@/components/ecommerce/products/productsFilter"
 import { ProductCard } from "@/components/ecommerce/products/ProductCard"
+import { getAllProducts } from "@/actions/productsAction"
+import { ProductWithRelations } from "@/model/ProductModel"
 
 const ITEMS_PER_PAGE = 12
 const DEFAULT_PRICE_RANGE = [0, 1500] as const
@@ -22,20 +23,51 @@ export function ProductsPageContent() {
   const { addItem } = useCart()
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   // Récupérer les valeurs directement des query parameters
   const selectedCategory = searchParams.get("category") || "Tous"
   const queryMinPrice = searchParams.get("minPrice") ? parseInt(searchParams.get("minPrice")!) : DEFAULT_PRICE_RANGE[0]
   const queryMaxPrice = searchParams.get("maxPrice") ? parseInt(searchParams.get("maxPrice")!) : DEFAULT_PRICE_RANGE[1]
   const minRating = searchParams.get("rating") ? parseInt(searchParams.get("rating")!) : 0
   const querySearch = searchParams.get("search") || ""
-  
+
   const priceRange = useMemo(() => [queryMinPrice, queryMaxPrice], [queryMinPrice, queryMaxPrice])
-  
-  // États locaux (non directement liés aux filtres)
+
+  // États locaux
   const [sortBy, setSortBy] = useState("popularity")
   const [currentPage, setCurrentPage] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [products, setProducts] = useState<ProductWithRelations[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      try {
+        const res = await getAllProducts({
+          categoryId: selectedCategory,
+          searchTerm: querySearch,
+          sortBy: sortBy as any,
+          pageSize: ITEMS_PER_PAGE,
+          pageNumber: currentPage,
+          minPrice: priceRange[0],
+          maxPrice: priceRange[1],
+          minRating: minRating
+        })
+        if (res.success && res.result) {
+          setProducts(res.result as ProductWithRelations[])
+          setTotalCount(res.totalCount || 0)
+        }
+      } catch (error) {
+        console.error("Failed to fetch products", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [selectedCategory, querySearch, sortBy, currentPage, priceRange, minRating])
 
   const handleCategoryChange = useCallback((category: string) => {
     setCurrentPage(1)
@@ -81,55 +113,16 @@ export function ProductsPageContent() {
     router.push("/produits")
   }, [router])
 
-  const handleAddToCart = useCallback((product: Product) => {
+  const handleAddToCart = useCallback((product: ProductWithRelations) => {
     addItem({
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
+      image: product.images[0]?.url || "/placeholder.svg",
     })
   }, [addItem])
 
-  // Filtre et tri optimisés avec useMemo =>✅ will be from the backend
-  const filteredAndSortedProducts = useMemo(() => {
-    const filtered = allProducts.filter((product) => {
-      const categoryMatch = selectedCategory === "Tous" || product.category === selectedCategory
-      const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1]
-      const ratingMatch = product.rating >= minRating
-      const searchMatch = querySearch === "" || 
-        product.name.toLowerCase().includes(querySearch.toLowerCase()) ||
-        product.description?.toLowerCase().includes(querySearch.toLowerCase())
-      return categoryMatch && priceMatch && ratingMatch && searchMatch
-    })
-
-    // Tri des produits
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "price-asc":
-          return a.price - b.price
-        case "price-desc":
-          return b.price - a.price
-        case "popularity":
-          return b.popularity - a.popularity
-        case "newest":
-          return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0)
-        default:
-          return 0
-      }
-    })
-
-    return filtered
-  }, [selectedCategory, priceRange, minRating, sortBy, querySearch])
-
-  // Pagination ✅ will be from the backend
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE)
-  const paginatedProducts = filteredAndSortedProducts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  )
-
-  // Compte des produits ✅ will be from the backend
-  const productCount = filteredAndSortedProducts.length
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,7 +133,7 @@ export function ProductsPageContent() {
             Catalogue de produits
           </h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Découvrez notre sélection de {allProducts.length} produits de qualité
+            Découvrez notre sélection de {totalCount} produits de qualité
           </p>
         </div>
 
@@ -150,8 +143,8 @@ export function ProductsPageContent() {
             {/* Bouton filtre mobile */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="lg:hidden bg-transparent text-xs sm:text-sm"
                   aria-label="Ouvrir les filtres"
                 >
@@ -185,7 +178,7 @@ export function ProductsPageContent() {
             </Sheet>
 
             <p className="text-xs text-muted-foreground sm:text-sm">
-              {productCount} produit{productCount !== 1 ? "s" : ""} trouvé{productCount !== 1 ? "s" : ""}
+              {totalCount} produit{totalCount !== 1 ? "s" : ""} trouvé{totalCount !== 1 ? "s" : ""}
             </p>
           </div>
 
@@ -215,7 +208,7 @@ export function ProductsPageContent() {
             <Card className="sticky top-4">
               <CardContent className="p-4 sm:p-6">
                 <h2 className="mb-4 text-lg font-semibold">Filtres</h2>
-                <FilterContent 
+                <FilterContent
                   selectedCategory={selectedCategory}
                   priceRange={priceRange}
                   minRating={minRating}
@@ -230,12 +223,16 @@ export function ProductsPageContent() {
 
           {/* Grille des produits */}
           <div className="flex-1">
-            {paginatedProducts.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : products.length === 0 ? (
               <Card className="p-8 sm:p-12 text-center">
                 <p className="text-base sm:text-lg text-muted-foreground mb-4">
                   Aucun produit ne correspond à vos critères
                 </p>
-                <Button 
+                <Button
                   onClick={handleResetFilters}
                   className="bg-accent text-accent-foreground hover:bg-accent/90"
                 >
@@ -246,18 +243,18 @@ export function ProductsPageContent() {
               <>
                 {/* Grille responsive - mobile first */}
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {paginatedProducts.map((product) => (
+                  {products.map((product) => (
                     <ProductCard
                       key={product.id}
-                      product={product}
-                      onAddToCart={handleAddToCart}
+                      product={product as any} // Temporary cast, need to update ProductCard
+                      onAddToCart={handleAddToCart as any}
                     />
                   ))}
                 </div>
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <nav 
+                  <nav
                     className="mt-6 sm:mt-8 flex items-center justify-center gap-1 sm:gap-2 flex-wrap"
                     aria-label="Pagination"
                   >
@@ -270,12 +267,12 @@ export function ProductsPageContent() {
                     >
                       Précédent
                     </Button>
-                    
+
                     <div className="flex gap-1">
                       {generateArray(totalPages).map((i) => {
                         const pageNum = i + 1
                         // Affichage intelligent des pages
-                        const showPage = 
+                        const showPage =
                           pageNum === 1 ||
                           pageNum === totalPages ||
                           (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
@@ -322,3 +319,4 @@ export function ProductsPageContent() {
     </div>
   )
 }
+
