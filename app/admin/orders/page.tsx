@@ -1,8 +1,11 @@
+import OrdersList from '@/components/admin/orders/OrdersList'
 import React from 'react'
 
 const OrderListPage = () => {
     return (
-        <div>OrderListPage</div>
+        <div>
+            <OrdersList />
+        </div>
     )
 }
 

@@ -16,6 +16,7 @@ model User {
   name          String
   email         String
   emailVerified Boolean @default(false)
+  address       String
   phone         String?
   image         String?
   role          Role    @default(USER)
