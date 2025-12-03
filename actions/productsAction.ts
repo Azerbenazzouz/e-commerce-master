@@ -6,7 +6,7 @@ import { ProductSchema, ProductSchemaType } from "@/schema/productSchema"
 import { ZodError } from "zod"
 
 interface GetAllProductsFilter {
-    categoryId?: string
+    categoryName?: string
     searchTerm?: string
     sortBy?: 'priceAsc' | 'priceDesc' | 'newest' | 'popularity'
     pageSize?: number
@@ -19,12 +19,14 @@ interface GetAllProductsFilter {
 export const getAllProducts = async (filter?: GetAllProductsFilter) => {
     try {
         const where: Prisma.ProductWhereInput = {}
-        const orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' }
+        let orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] = { createdAt: 'desc' }
         let skip = 0
         const take = filter?.pageSize || 20
 
-        if (filter?.categoryId && filter.categoryId !== "Tous") {
-            where.categoryId = filter.categoryId
+        if (filter?.categoryName && filter.categoryName !== "Tous") {
+            where.category = {
+                name: filter.categoryName
+            }
         }
         if (filter?.searchTerm) {
             where.OR = [
@@ -46,13 +48,13 @@ export const getAllProducts = async (filter?: GetAllProductsFilter) => {
 
         if (filter?.sortBy) {
             if (filter.sortBy === 'priceAsc') {
-                orderBy.price = 'asc'
+                orderBy = { price: 'asc' }
             } else if (filter.sortBy === 'priceDesc') {
-                orderBy.price = 'desc'
+                orderBy = { price: 'desc' }
             } else if (filter.sortBy === 'newest') {
-                orderBy.createdAt = 'desc'
+                orderBy = { createdAt: 'desc' }
             } else if (filter.sortBy === 'popularity') {
-                orderBy.popularity = 'desc'
+                orderBy = { popularity: 'desc' }
             }
         }
 

@@ -66,7 +66,7 @@ export function ProductsPageContent() {
       setLoading(true)
       try {
         const res = await getAllProducts({
-          categoryId: selectedCategory,
+          categoryName: selectedCategory,
           searchTerm: querySearch,
           sortBy: sortBy as any,
           pageSize: ITEMS_PER_PAGE,
