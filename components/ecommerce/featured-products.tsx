@@ -10,13 +10,13 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { getAllProducts } from "@/actions/productsAction"
-import { ProductWithRelations } from "@/model/ProductModel"
+import { FullProduct } from "@/model/ProductModel"
 
 export function FeaturedProducts() {
   const { addItem } = useCart()
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [addedToCart, setAddedToCart] = useState<Set<string>>(new Set())
-  const [products, setProducts] = useState<ProductWithRelations[]>([])
+  const [products, setProducts] = useState<FullProduct[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export function FeaturedProducts() {
       try {
         const res = await getAllProducts({ pageSize: 8, sortBy: 'newest' })
         if (res.success && res.result) {
-          setProducts(res.result as ProductWithRelations[])
+          setProducts(res.result as FullProduct[])
         }
       } catch (error) {
         console.error("Failed to fetch featured products", error)
@@ -35,7 +35,7 @@ export function FeaturedProducts() {
     fetchProducts()
   }, [])
 
-  const handleAddToCart = (product: ProductWithRelations) => {
+  const handleAddToCart = (product: FullProduct) => {
     addItem({
       id: product.id,
       name: product.name,

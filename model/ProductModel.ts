@@ -1,7 +1,11 @@
 import { Category, ImageDB, Product, Review, User } from "@prisma/client";
 
-export interface ProductWithRelations extends Product {
+export interface FullProduct extends Product {
     images: ImageDB[]
     category: Category
-    reviews: (Review & { user: User })[]
+    reviews: ReviewWithUser[]
+}
+
+interface ReviewWithUser extends Review {
+    user: User
 }

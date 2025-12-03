@@ -12,7 +12,7 @@ import { useCart } from "@/context/cart-context"
 import { FilterContent } from "@/components/ecommerce/products/productsFilter"
 import { ProductCard } from "@/components/ecommerce/products/ProductCard"
 import { getAllProducts } from "@/actions/productsAction"
-import { ProductWithRelations } from "@/model/ProductModel"
+import { FullProduct } from "@/model/ProductModel"
 
 const ITEMS_PER_PAGE = 12
 const DEFAULT_PRICE_RANGE = [0, 1500] as const
@@ -37,7 +37,7 @@ export function ProductsPageContent() {
   const [sortBy, setSortBy] = useState("popularity")
   const [currentPage, setCurrentPage] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [products, setProducts] = useState<ProductWithRelations[]>([])
+  const [products, setProducts] = useState<FullProduct[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -57,7 +57,7 @@ export function ProductsPageContent() {
           minRating: minRating
         })
         if (res.success && res.result) {
-          setProducts(res.result as ProductWithRelations[])
+          setProducts(res.result as FullProduct[])
           setTotalCount(res.totalCount || 0)
         }
       } catch (error) {
@@ -113,7 +113,7 @@ export function ProductsPageContent() {
     router.push("/produits")
   }, [router])
 
-  const handleAddToCart = useCallback((product: ProductWithRelations) => {
+  const handleAddToCart = useCallback((product: FullProduct) => {
     addItem({
       id: product.id,
       name: product.name,

@@ -5,11 +5,11 @@ import { Star, ShoppingCart, Zap } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
-import { ProductWithRelations } from "@/model/ProductModel"
+import { FullProduct } from "@/model/ProductModel"
 
 interface ProductCardProps {
-  product: ProductWithRelations
-  onAddToCart: (product: ProductWithRelations) => void
+  product: FullProduct
+  onAddToCart: (product: FullProduct) => void
 }
 
 const generateArray = (length: number) => Array.from({ length }, (_, i) => i)
@@ -50,8 +50,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                   <Star
                     key={i}
                     className={`h-3 w-3 sm:h-4 sm:w-4 ${i < Math.floor(product.rating)
-                        ? "fill-accent text-accent"
-                        : "fill-muted text-muted"
+                      ? "fill-accent text-accent"
+                      : "fill-muted text-muted"
                       }`}
                     aria-hidden="true"
                   />

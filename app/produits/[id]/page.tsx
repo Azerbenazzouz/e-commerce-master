@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { getProductById, getSimilarProducts } from "@/actions/productsAction"
-import { ProductWithRelations } from "@/model/ProductModel"
+import { FullProduct } from "@/model/ProductModel"
 import Link from "next/link"
 import { useCart } from "@/context/cart-context"
 import Image from "next/image"
@@ -18,8 +18,8 @@ export default function ProductDetailPage() {
   const productId = params.id as string // ID is string in DB
   const { addItem } = useCart()
 
-  const [product, setProduct] = useState<ProductWithRelations | null>(null)
-  const [similarProducts, setSimilarProducts] = useState<ProductWithRelations[]>([])
+  const [product, setProduct] = useState<FullProduct | null>(null)
+  const [similarProducts, setSimilarProducts] = useState<FullProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -31,13 +31,13 @@ export default function ProductDetailPage() {
       try {
         const productRes = await getProductById(productId)
         if (productRes.success && productRes.result) {
-          const prod = productRes.result as ProductWithRelations
+          const prod = productRes.result as FullProduct
           setProduct(prod)
 
           if (prod.categoryId) {
             const similarRes = await getSimilarProducts(prod.id, prod.categoryId)
             if (similarRes.success && similarRes.result) {
-              setSimilarProducts(similarRes.result as ProductWithRelations[])
+              setSimilarProducts(similarRes.result as FullProduct[])
             }
           }
         }
