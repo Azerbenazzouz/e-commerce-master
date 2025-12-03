@@ -4,12 +4,16 @@ import { prisma } from "@/lib/db";
 import { CategorySchema, CategorySchemaType } from "@/schema/categorySchema";
 import { ZodError } from "zod";
 
+import { CategoryWithRelations } from "@/model/CategoryModel";
+
 export const getAllCategories = async () => {
     try {
-        const categories = await prisma.category.findMany({});
+        const categories = await prisma.category.findMany({
+            include: { image: true }
+        });
         return {
             success: true,
-            result: categories
+            result: categories as CategoryWithRelations[]
         }
 
     } catch (error) {

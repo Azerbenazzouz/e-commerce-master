@@ -1,63 +1,62 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Smartphone, Shirt, Home, Dumbbell, Sparkles, Book, ArrowRight } from "lucide-react"
+import { Smartphone, Shirt, Home, Dumbbell, Sparkles, Book, ArrowRight, Package } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { getAllCategories } from "@/actions/categoriesAction"
+import type { LucideIcon } from "lucide-react"
 
-const categories = [
-  {
-    name: "Électronique",
-    icon: Smartphone,
-    image: "/electronics-devices.jpg",
-    count: "2,450 produits",
-    href: "/produits?category=Électronique",
-    color: "from-blue-500/80 to-cyan-500/80",
-    featured: true,
-  },
-  {
-    name: "Mode",
-    icon: Shirt,
-    image: "/diverse-fashion-collection.png",
-    count: "3,890 produits",
-    href: "/produits?category=Mode",
-    color: "from-pink-500/80 to-rose-500/80",
-    featured: true,
-  },
-  {
-    name: "Maison & Jardin",
-    icon: Home,
-    image: "/home-garden-decor.jpg",
-    count: "1,670 produits",
-    href: "/produits?category=Maison & Jardin",
-    color: "from-green-500/80 to-emerald-500/80",
-  },
-  {
-    name: "Sports & Loisirs",
-    icon: Dumbbell,
-    image: "/assorted-sports-gear.png",
-    count: "980 produits",
-    href: "/produits?category=Sports & Loisirs",
-    color: "from-orange-500/80 to-amber-500/80",
-  },
-  {
-    name: "Beauté & Santé",
-    icon: Sparkles,
-    image: "/beauty-cosmetics.png",
-    count: "1,230 produits",
-    href: "/produits?category=Beauté & Santé",
-    color: "from-purple-500/80 to-fuchsia-500/80",
-  },
-  {
-    name: "Livres",
-    icon: Book,
-    image: "/books-library.jpg",
-    count: "5,670 produits",
-    href: "/produits?category=Livres",
-    color: "from-indigo-500/80 to-blue-500/80",
-  },
+// Icon mapping for known categories
+const iconMap: Record<string, LucideIcon> = {
+  "Électronique": Smartphone,
+  "Mode": Shirt,
+  "Maison & Jardin": Home,
+  "Sports & Loisirs": Dumbbell,
+  "Beauté & Santé": Sparkles,
+  "Livres": Book,
+}
+
+// Color mapping for known categories
+const colorMap: Record<string, string> = {
+  "Électronique": "from-blue-500/80 to-cyan-500/80",
+  "Mode": "from-pink-500/80 to-rose-500/80",
+  "Maison & Jardin": "from-green-500/80 to-emerald-500/80",
+  "Sports & Loisirs": "from-orange-500/80 to-amber-500/80",
+  "Beauté & Santé": "from-purple-500/80 to-fuchsia-500/80",
+  "Livres": "from-indigo-500/80 to-blue-500/80",
+}
+
+// Default colors for unknown categories
+const defaultColors = [
+  "from-blue-500/80 to-cyan-500/80",
+  "from-pink-500/80 to-rose-500/80",
+  "from-green-500/80 to-emerald-500/80",
+  "from-orange-500/80 to-amber-500/80",
+  "from-purple-500/80 to-fuchsia-500/80",
+  "from-indigo-500/80 to-blue-500/80",
 ]
 
-export function CategoryCards() {
+export async function CategoryCards() {
+  // Fetch categories from backend
+  const response = await getAllCategories()
+  const backendCategories = response.success ? response.result || [] : []
+
+  // Map backend categories to UI format
+  const categories = backendCategories.map((cat, index) => {
+    const icon = iconMap[cat.name] || Package
+    const color = colorMap[cat.name] || defaultColors[index % defaultColors.length]
+    const featured = index < 2 // First 2 categories are featured
+
+    return {
+      name: cat.name,
+      icon,
+      image: cat.image?.url || "/placeholder.svg",
+      count: "", // Can be calculated from products later
+      href: `/produits?category=${encodeURIComponent(cat.name)}`,
+      color,
+      featured,
+    }
+  })
   return (
     <section className="py-8 sm:py-12 lg:py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -76,7 +75,7 @@ export function CategoryCards() {
           {categories.map((category) => {
             const Icon = category.icon
             const isFeatured = category.featured
-            
+
             return (
               <Link
                 key={category.name}
@@ -102,7 +101,7 @@ export function CategoryCards() {
                         fill
                         sizes={isFeatured ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 25vw"}
                       />
-                      
+
                       {/* Gradient overlays - colored based on category */}
                       <div className={cn(
                         "absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-500"
@@ -122,7 +121,7 @@ export function CategoryCards() {
                           )}>
                             <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                           </div>
-                          
+
                           {/* Arrow indicator */}
                           <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">
                             <ArrowRight className="h-4 w-4 text-white" />
@@ -169,7 +168,7 @@ export function CategoryCards() {
 
         {/* View All CTA */}
         <div className="mt-8 sm:mt-10 lg:mt-12 text-center">
-          <Link 
+          <Link
             href="/produits"
             className="inline-flex items-center gap-2 text-sm sm:text-base font-medium text-foreground/80 hover:text-foreground transition-colors group"
           >

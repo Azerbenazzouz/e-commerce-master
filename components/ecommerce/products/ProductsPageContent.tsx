@@ -12,7 +12,9 @@ import { useCart } from "@/context/cart-context"
 import { FilterContent } from "@/components/ecommerce/products/productsFilter"
 import { ProductCard } from "@/components/ecommerce/products/ProductCard"
 import { getAllProducts } from "@/actions/productsAction"
+import { getAllCategories } from "@/actions/categoriesAction"
 import { FullProduct } from "@/model/ProductModel"
+import { CategoryWithRelations } from "@/model/CategoryModel"
 
 const ITEMS_PER_PAGE = 12
 const DEFAULT_PRICE_RANGE = [0, 1500] as const
@@ -38,8 +40,25 @@ export function ProductsPageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [products, setProducts] = useState<FullProduct[]>([])
+  const [categories, setCategories] = useState<string[]>(["Tous"])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await getAllCategories()
+        if (res.success && res.result) {
+          const categoryNames = ["Tous", ...res.result.map((c: CategoryWithRelations) => c.name)]
+          setCategories(categoryNames)
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories", error)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   // Fetch products from backend
   useEffect(() => {
@@ -162,6 +181,7 @@ export function ProductsPageContent() {
                     selectedCategory={selectedCategory}
                     priceRange={priceRange}
                     minRating={minRating}
+                    categories={categories}
                     onCategoryChange={(cat) => {
                       handleCategoryChange(cat)
                       setSheetOpen(false)
@@ -212,6 +232,7 @@ export function ProductsPageContent() {
                   selectedCategory={selectedCategory}
                   priceRange={priceRange}
                   minRating={minRating}
+                  categories={categories}
                   onCategoryChange={handleCategoryChange}
                   onPriceChange={handlePriceChange}
                   onRatingChange={handleRatingChange}

@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Star } from "lucide-react"
 import * as React from "react"
-import { categories } from "@/lib/products-data"
 
 interface FilterContentProps {
   selectedCategory: string
   priceRange: number[]
   minRating: number
+  categories: string[]
   onCategoryChange: (category: string) => void
   onPriceChange: (range: number[]) => void
   onRatingChange: (rating: number) => void
@@ -22,6 +22,7 @@ export const FilterContent: React.FC<FilterContentProps> = ({
   selectedCategory,
   priceRange,
   minRating,
+  categories,
   onCategoryChange,
   onPriceChange,
   onRatingChange,
@@ -86,9 +87,9 @@ export const FilterContent: React.FC<FilterContentProps> = ({
         </div>
       </div>
 
-      <Button 
-        variant="outline" 
-        onClick={onReset} 
+      <Button
+        variant="outline"
+        onClick={onReset}
         className="w-full bg-transparent"
         aria-label="Réinitialiser tous les filtres"
       >
