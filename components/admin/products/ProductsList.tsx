@@ -7,12 +7,12 @@ import { deleteProduct, getAllProducts } from '@/actions/productsAction'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select'
 import {
   AlertDialog,
@@ -40,7 +40,7 @@ const DEFAULT_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/s
 
 export default function ProductsList({ categories = [] }: ProductsListProps) {
   const router = useRouter()
-  
+
   const [products, setProducts] = useState<FullProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
@@ -64,7 +64,7 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
     try {
       const res = await getAllProducts({
         searchTerm: searchTerm || undefined,
-        categoryId: categoryFilter || undefined,
+        categoryName: categoryFilter || undefined,
         sortBy,
         pageNumber: currentPage,
         pageSize
@@ -75,7 +75,7 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
         setTotalCount(res.totalCount || 0)
         setPageCount(res.pageCount || 1)
       } else {
-        
+
         toast.error(res.error || 'Impossible de charger les produits')
       }
     } catch (error) {
@@ -386,9 +386,8 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
                           setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                         disabled={currentPage === 1}
-                        className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 gap-1 px-2.5 ${
-                          currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                        }`}
+                        className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 gap-1 px-2.5 ${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                          }`}
                       >
                         <span>«</span>
                         <span className="hidden sm:inline">Précédent</span>
@@ -419,9 +418,8 @@ export default function ProductsList({ categories = [] }: ProductsListProps) {
                           setCurrentPage((prev) => Math.min(prev + 1, pageCount))
                         }
                         disabled={currentPage === pageCount}
-                        className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 gap-1 px-2.5 ${
-                          currentPage === pageCount ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                        }`}
+                        className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 gap-1 px-2.5 ${currentPage === pageCount ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                          }`}
                       >
                         <span className="hidden sm:inline">Suivant</span>
                         <span>»</span>
