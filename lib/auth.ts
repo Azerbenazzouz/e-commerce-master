@@ -33,6 +33,11 @@ export const auth = betterAuth({
         input: false,
         required: false
       },
+      address: {
+        type: "string",
+        input: false,
+        required: false
+      },
       // active: {
       //   type: "boolean",
       //   input: false,
