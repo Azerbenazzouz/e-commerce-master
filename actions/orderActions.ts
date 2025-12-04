@@ -6,6 +6,9 @@ import { revalidatePath } from "next/cache";
 import { orderSchema } from "@/schema/orderSchema";
 import { z } from "zod";
 
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
 export async function getOrders({
     page = 1,
     limit = 10,
@@ -59,6 +62,35 @@ export async function getOrders({
     }
 }
 
+export async function getUserOrders() {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+
+    if (!session?.user) {
+        return [];
+    }
+
+    try {
+        const orders = await prisma.order.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: "desc" },
+            include: {
+                items: {
+                    include: {
+                        product: true,
+                    },
+                },
+            },
+        });
+
+        return orders;
+    } catch (error) {
+        console.error("Error fetching user orders:", error);
+        throw new Error("Failed to fetch user orders");
+    }
+}
+
 export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
     try {
         const order = await prisma.order.findUnique({
@@ -79,15 +111,27 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 
         if (!isShippedOrDelivered(currentStatus) && isShippedOrDelivered(newStatus)) {
             // Pending -> Shipped/Delivered
-            stockAdjustment = -1;
+            // Stock already decremented at creation, so no change needed unless we want to be strict.
+            // But wait, if we consider Pending as "Reserved", then Shipped is just "Gone".
+            // So no stock adjustment needed here if createOrder decrements.
+            stockAdjustment = 0;
         } else if (isShippedOrDelivered(currentStatus) && newStatus === OrderStatus.CANCELLED) {
             // Shipped/Delivered -> Cancelled
+            // Item returned to stock
             stockAdjustment = 1;
+        } else if (currentStatus === OrderStatus.PENDING && newStatus === OrderStatus.CANCELLED) {
+            // Pending -> Cancelled
+            // Release reservation
+            stockAdjustment = 1;
+        } else if (currentStatus === OrderStatus.CANCELLED && newStatus === OrderStatus.PENDING) {
+            // Cancelled -> Pending
+            // Re-reserve
+            stockAdjustment = -1;
         } else if (currentStatus === OrderStatus.CANCELLED && isShippedOrDelivered(newStatus)) {
             // Cancelled -> Shipped/Delivered
+            // Take from stock
             stockAdjustment = -1;
         }
-        // Other transitions (e.g., Pending -> Cancelled, Shipped -> Delivered) have 0 adjustment
 
         await prisma.$transaction(async (tx) => {
             // Update order status
@@ -129,6 +173,10 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
 
     const { name, address, email, phone, items, total } = result.data;
 
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+
     try {
         const order = await prisma.$transaction(async (tx) => {
             // Check stock for all items first
@@ -154,6 +202,7 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
                     email,
                     phone,
                     total,
+                    userId: session?.user?.id,
                     status: OrderStatus.PENDING,
                     items: {
                         create: items.map((item) => ({
@@ -184,5 +233,64 @@ export async function createOrder(data: z.infer<typeof orderSchema>) {
     } catch (error: any) {
         console.error("Error creating order:", error);
         return { success: false, error: error.message || "Failed to create order" };
+    }
+}
+
+export async function cancelOrder(orderId: string) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+
+    if (!session?.user) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { items: true },
+        });
+
+        if (!order) {
+            return { success: false, error: "Order not found" };
+        }
+
+        if (order.userId !== session.user.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        if (order.status === OrderStatus.SHIPPED || order.status === OrderStatus.DELIVERED) {
+            return { success: false, error: "Cannot cancel shipped or delivered order" };
+        }
+
+        if (order.status === OrderStatus.CANCELLED) {
+            return { success: false, error: "Order already cancelled" };
+        }
+
+        await prisma.$transaction(async (tx) => {
+            // Update order status
+            await tx.order.update({
+                where: { id: orderId },
+                data: { status: OrderStatus.CANCELLED },
+            });
+
+            // Restore stock
+            for (const item of order.items) {
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: {
+                        stock: {
+                            increment: item.quantity,
+                        },
+                    },
+                });
+            }
+        });
+
+        revalidatePath("/orders");
+        return { success: true };
+    } catch (error) {
+        console.error("Error cancelling order:", error);
+        return { success: false, error: "Failed to cancel order" };
     }
 }
